@@ -98,6 +98,89 @@
     briefcase: ["business", "sales", "deal"],
     target: ["target", "goal", "objective", "focus"],
   };
+  const TASK_CATEGORY_KEYWORDS = {
+    Wellbeing: [
+      "sport",
+      "gym",
+      "workout",
+      "exercise",
+      "run",
+      "yoga",
+      "meditation",
+      "mindful",
+      "wellness",
+      "health",
+      "eat healthy",
+      "healthy",
+      "diet",
+      "sleep",
+      "hydrate",
+      "water",
+      "walk",
+      "stretch",
+    ],
+    Learning: [
+      "learn",
+      "learning",
+      "study",
+      "course",
+      "read",
+      "reading",
+      "book",
+      "blinkist",
+      "article",
+      "podcast",
+      "training",
+      "class",
+      "research",
+    ],
+    Social: [
+      "family",
+      "friend",
+      "friends",
+      "social",
+      "call mom",
+      "call dad",
+      "dinner",
+      "date",
+      "visit",
+      "community",
+      "networking",
+    ],
+    Work: [
+      "work",
+      "client",
+      "project",
+      "meeting",
+      "email",
+      "proposal",
+      "report",
+      "oracle",
+      "deadline",
+      "presentation",
+      "sales",
+      "follow up",
+      "follow-up",
+      "code review",
+      "deploy",
+    ],
+    Hobbies: [
+      "hobby",
+      "music",
+      "piano",
+      "guitar",
+      "photo",
+      "camera",
+      "painting",
+      "draw",
+      "cook",
+      "chess",
+      "gaming",
+      "game",
+      "travel",
+      "writing",
+    ],
+  };
   const PAGE = document.body.dataset.page || "today";
 
   const state = loadState();
@@ -661,8 +744,19 @@
 
       iconWrap.innerHTML = renderTaskIconSvg(inferTaskIcon(task.title));
 
-      const label = document.createElement("label");
-      label.textContent = task.title;
+      const taskMain = document.createElement("div");
+      taskMain.className = "task-main";
+
+      const title = document.createElement("div");
+      title.className = "task-title";
+      title.textContent = task.title;
+
+      const category = document.createElement("div");
+      category.className = "task-category";
+      category.textContent = inferTaskCategory(task.title);
+
+      taskMain.appendChild(title);
+      taskMain.appendChild(category);
 
       const editBtn = document.createElement("button");
       editBtn.type = "button";
@@ -684,7 +778,7 @@
 
       li.appendChild(checkbox);
       li.appendChild(iconWrap);
-      li.appendChild(label);
+      li.appendChild(taskMain);
       li.appendChild(editBtn);
       li.appendChild(deleteBtn);
       els.taskList.appendChild(li);
@@ -1600,6 +1694,22 @@
       }
     });
     return best;
+  }
+
+  function inferTaskCategory(title) {
+    const text = String(title || "").toLowerCase();
+    let bestCategory = "Work";
+    let bestScore = 0;
+
+    Object.entries(TASK_CATEGORY_KEYWORDS).forEach(([category, keywords]) => {
+      const score = keywords.reduce((acc, keyword) => acc + (text.includes(keyword) ? 1 : 0), 0);
+      if (score > bestScore) {
+        bestScore = score;
+        bestCategory = category;
+      }
+    });
+
+    return bestScore > 0 ? bestCategory : "Work";
   }
 
   function normalizeLegacyIcon(value) {

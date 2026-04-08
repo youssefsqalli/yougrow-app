@@ -308,9 +308,25 @@ textarea:focus {
   background: transparent;
 }
 
-.task-item label {
+.task-main {
   flex: 1;
+  min-width: 0;
+}
+
+.task-title {
   font-size: 1.02rem;
+  color: #23395d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-category {
+  margin-top: 2px;
+  font-size: 0.68rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: #7a8eac;
 }
 
 .task-icon-box {
@@ -339,9 +355,13 @@ textarea:focus {
   line-height: 1;
 }
 
-.task-item.done label {
+.task-item.done .task-title {
   text-decoration: line-through;
   color: #6d84a6;
+}
+
+.task-item.done .task-category {
+  color: #9aabc2;
 }
 
 .task-action {
