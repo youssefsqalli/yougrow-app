@@ -1,0 +1,6 @@
+name = "yougrow-daily5"
+main = "daily5-worker.js"
+compatibility_date = "2026-04-07"
+
+[vars]
+DAILY5_MODEL = "gpt-5.1"

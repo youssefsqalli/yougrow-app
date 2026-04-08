@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>YouGrow - Daily 5 Settings</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-page="daily5-settings">
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="topbar-row">
+          <h1>Daily 5 Settings</h1>
+          <a class="btn-outline daily5-settings-link" href="daily5.html">Done</a>
+        </div>
+      </header>
+
+      <nav class="app-nav" aria-label="Main navigation">
+        <a href="index.html" class="nav-item" aria-label="Home" title="Home">
+          <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 11l8-6 8 6"></path>
+            <path d="M6 10v9h12v-9"></path>
+          </svg>
+        </a>
+        <a href="daily5.html" class="nav-item active" aria-label="Daily 5" title="Daily 5">
+          <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 5h12M6 12h12M6 19h8"></path>
+            <circle cx="17.5" cy="19" r="2.5"></circle>
+          </svg>
+        </a>
+        <a href="tasks.html" class="nav-item" aria-label="Tasks" title="Tasks">
+          <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="3" width="14" height="18" rx="2"></rect>
+            <path d="M9 8.5h6M9 12.5h6M9 16.5h6"></path>
+            <path d="M7.2 8.5l0.8 0.8 1.4-1.6M7.2 12.5l0.8 0.8 1.4-1.6M7.2 16.5l0.8 0.8 1.4-1.6"></path>
+          </svg>
+        </a>
+        <a href="calendar.html" class="nav-item" aria-label="Dashboard" title="Dashboard">
+          <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="17" rx="2"></rect>
+            <path d="M3 9h18M8 2.5v3M16 2.5v3M8 13h3M13 13h3M8 17h3M13 17h3"></path>
+          </svg>
+        </a>
+        <a href="settings.html" class="nav-item" aria-label="Settings" title="Settings">
+          <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.1"></circle>
+            <path d="M12 2.8v2.2M12 19v2.2M4.8 12H2.6M21.4 12h-2.2M5.9 5.9l1.6 1.6M16.5 16.5l1.6 1.6M18.1 5.9l-1.6 1.6M7.5 16.5l-1.6 1.6"></path>
+          </svg>
+        </a>
+      </nav>
+
+      <section class="surface daily5-surface">
+        <div class="daily5-controls">
+          <div class="setting-row daily5-row">
+            <div>
+              <h2>Topics</h2>
+              <p class="muted">Add your own topics and keep only what you selected.</p>
+            </div>
+            <div class="daily5-topic-stack">
+              <div class="daily5-custom-row">
+                <input id="daily5CustomTopic" type="text" placeholder="Add custom topic (ex: GPU)" />
+                <button id="daily5AddTopicBtn" class="btn-outline" type="button">Add</button>
+              </div>
+              <div id="daily5SelectedTopics" class="selected-topic-wrap"></div>
+            </div>
+          </div>
+
+          <div class="setting-row daily5-row">
+            <div>
+              <h2>Prompt</h2>
+              <p class="muted">Example: "Latest updates on GPU" or "Top 4 AI companies updates".</p>
+            </div>
+            <div class="daily5-prompt-stack">
+              <textarea id="daily5Prompt" rows="3" placeholder="Describe exactly what you want to learn today..."></textarea>
+              <button id="daily5SavePromptBtn" class="btn-solid" type="button">Save Prompt</button>
+            </div>
+          </div>
+
+          <div class="setting-row daily5-row">
+            <div>
+              <h2>Daily 5 API</h2>
+              <p class="muted">Paste your Cloudflare Worker URL (example: https://yougrow-daily5.yourname.workers.dev).</p>
+            </div>
+            <div class="daily5-prompt-stack">
+              <input id="daily5Endpoint" type="url" placeholder="https://your-worker-url.workers.dev" />
+              <button id="daily5SaveEndpointBtn" class="btn-solid" type="button">Save API URL</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

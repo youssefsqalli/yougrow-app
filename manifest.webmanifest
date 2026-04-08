@@ -1,0 +1,17 @@
+{
+  "name": "YouGrow",
+  "short_name": "YouGrow",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "YouGrow helps you track tasks and learn daily with Daily 5.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23ffffff'/%3E%3Crect x='80' y='80' width='352' height='352' rx='48' fill='none' stroke='%231f6feb' stroke-width='28'/%3E%3Cpath d='M150 270l66 66 146-146' fill='none' stroke='%231f6feb' stroke-width='34' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
