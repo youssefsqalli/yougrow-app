@@ -166,8 +166,12 @@
     const header = document.createElement("div");
     header.className = "home-section-head";
     const title = document.createElement("h2");
-    title.textContent = `${config.title} · ${config.total} min`;
+    title.textContent = config.title;
+    const total = document.createElement("span");
+    total.className = "home-section-total";
+    total.textContent = `${config.total} min`;
     header.appendChild(title);
+    header.appendChild(total);
     mount.appendChild(header);
 
     mount.appendChild(renderProgressBar(config.total, config.maxTotal, config.tone));

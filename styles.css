@@ -122,24 +122,61 @@ h2 {
   padding: 6px;
   width: min(calc(var(--shell-max) - (var(--shell-pad-x) * 2)), calc(100vw - (var(--shell-pad-x) * 2)));
   box-shadow: 0 10px 26px rgba(18, 58, 90, 0.16);
+  overflow: visible;
 }
 
 .nav-item {
+  position: relative;
   display: grid;
   place-items: center;
   text-decoration: none;
   text-align: center;
-  color: var(--line);
+  color: #6f7b8f;
   border-radius: 12px;
   padding: 6px 8px;
   min-height: 48px;
   font-weight: 600;
   border: 0;
+  background: #f2f4f7;
+  transform: translateY(2px);
+  transition:
+    transform 240ms ease,
+    color 240ms ease,
+    background-color 240ms ease,
+    box-shadow 240ms ease;
 }
 
 .nav-item.active {
-  background: var(--blue-fill);
-  color: #fff;
+  background: var(--bg);
+  color: var(--line);
+  transform: translateY(-10px);
+  box-shadow: 0 8px 18px rgba(18, 58, 90, 0.13);
+}
+
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  height: 10px;
+  background: var(--bg);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.nav-item .icon-svg {
+  transition:
+    transform 240ms ease,
+    opacity 240ms ease,
+    stroke-width 240ms ease;
+  opacity: 0.88;
+}
+
+.nav-item.active .icon-svg {
+  transform: scale(1.1);
+  opacity: 1;
+  stroke-width: 2.2;
 }
 
 .surface {
@@ -1123,8 +1160,9 @@ body[data-page="home"] {
 .home-section-head {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   margin: 0 2px 8px;
+  gap: 10px;
 }
 
 .home-section-head h2 {
@@ -1132,6 +1170,14 @@ body[data-page="home"] {
   font-size: 0.98rem;
   letter-spacing: -0.01em;
   color: #1f2937;
+}
+
+.home-section-total {
+  min-width: 58px;
+  text-align: right;
+  font-size: 0.82rem;
+  color: #4b5563;
+  white-space: nowrap;
 }
 
 .home-list {
@@ -1252,11 +1298,13 @@ body[data-page="home"] {
 }
 
 .home-app-minutes {
+  min-width: 58px;
   font-size: 0.82rem;
   color: #4b5563;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
 }
 
