@@ -50,7 +50,7 @@ samp {
   max-width: var(--shell-max);
   margin: 0 auto;
   height: 100dvh;
-  padding: 12px var(--shell-pad-x) 84px;
+  padding: 14px var(--shell-pad-x) 84px;
   display: grid;
   grid-template-rows: auto auto auto 1fr;
   gap: 10px;
@@ -62,6 +62,7 @@ samp {
   justify-content: space-between;
   align-items: center;
   padding: 0 2px 4px;
+  min-height: 40px;
 }
 
 .topbar-row {
@@ -115,66 +116,71 @@ h2 {
   z-index: 20;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  background: #ffffff;
-  border: 0;
-  border-radius: 16px;
-  padding: 6px;
+  gap: 0;
+  background: transparent;
+  border: 2px solid var(--line);
+  border-top: 0;
+  border-radius: 0;
+  padding: 0;
   width: min(calc(var(--shell-max) - (var(--shell-pad-x) * 2)), calc(100vw - (var(--shell-pad-x) * 2)));
-  box-shadow: 0 10px 26px rgba(18, 58, 90, 0.16);
+  box-shadow: none;
   overflow: visible;
 }
 
 .nav-item {
   position: relative;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
   text-align: center;
   color: #6f7b8f;
-  border-radius: 12px;
+  border-radius: 0;
   padding: 6px 8px;
-  min-height: 48px;
+  min-height: 52px;
   font-weight: 600;
   border: 0;
-  background: #f2f4f7;
-  transform: translateY(2px);
+  border-left: 2px solid var(--line);
+  background: transparent;
   transition:
-    transform 240ms ease,
     color 240ms ease,
     background-color 240ms ease,
-    box-shadow 240ms ease;
+    opacity 240ms ease;
+}
+
+.nav-item:first-child {
+  border-left: 0;
+}
+
+.nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  border-top: 2px solid var(--line);
+  pointer-events: none;
 }
 
 .nav-item.active {
   background: var(--bg);
   color: var(--line);
-  transform: translateY(-10px);
-  box-shadow: 0 8px 18px rgba(18, 58, 90, 0.13);
+  opacity: 1;
 }
 
 .nav-item.active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -10px;
-  height: 10px;
-  background: var(--bg);
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
+  border-top-color: transparent;
 }
 
 .nav-item .icon-svg {
   transition:
-    transform 240ms ease,
     opacity 240ms ease,
     stroke-width 240ms ease;
-  opacity: 0.88;
+  opacity: 0.72;
+  transform: none;
 }
 
 .nav-item.active .icon-svg {
-  transform: scale(1.1);
   opacity: 1;
   stroke-width: 2.2;
 }
@@ -1007,7 +1013,11 @@ body[data-page="calendar"] .calendar-grid {
   }
 
   .app-shell {
-    padding: 10px var(--shell-pad-x) 82px;
+    padding: 14px var(--shell-pad-x) 82px;
+  }
+
+  .home-shell {
+    padding: 14px var(--shell-pad-x) calc(80px + env(safe-area-inset-bottom));
   }
 
   .calendar-header {
@@ -1083,6 +1093,7 @@ body[data-page="home"] {
   align-items: center;
   justify-content: space-between;
   padding: 0 2px 4px;
+  min-height: 40px;
 }
 
 .home-title {
