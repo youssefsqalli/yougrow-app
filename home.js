@@ -150,13 +150,8 @@
     value.textContent = String(Math.max(0, Number(credits) || 0));
     value.classList.toggle("is-zero", Number(credits) <= 0);
 
-    const meta = document.createElement("p");
-    meta.className = "home-credits-meta";
-    meta.textContent = `${distractionTotal} min distraction · ${growthTotal} min growth`;
-
     els.heroMount.appendChild(label);
     els.heroMount.appendChild(value);
-    els.heroMount.appendChild(meta);
   }
 
   function renderSection(mount, config) {

@@ -158,8 +158,8 @@ h2 {
   content: "";
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  left: 3px;
+  right: 3px;
   height: 3px;
   border-radius: 0;
   background: var(--line);
@@ -1155,7 +1155,7 @@ body[data-page="home"] {
 
 .home-credits-value {
   margin: 6px 0 0;
-  font-size: clamp(2.2rem, 10vw, 3.2rem);
+  font-size: clamp(2.5rem, 11vw, 3.7rem);
   font-weight: 760;
   letter-spacing: -0.04em;
   line-height: 1;
