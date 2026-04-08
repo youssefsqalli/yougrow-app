@@ -138,7 +138,7 @@
     return row;
   }
 
-  function renderHeader(credits, addictiveTotal, usefulTotal) {
+  function renderHeader(credits, distractionTotal, growthTotal) {
     els.heroMount.innerHTML = "";
 
     const label = document.createElement("p");
@@ -151,7 +151,7 @@
 
     const meta = document.createElement("p");
     meta.className = "home-credits-meta";
-    meta.textContent = `${addictiveTotal} min addictive · ${usefulTotal} min useful`;
+    meta.textContent = `${distractionTotal} min distraction · ${growthTotal} min growth`;
 
     els.heroMount.appendChild(label);
     els.heroMount.appendChild(value);
@@ -188,22 +188,22 @@
     const addictiveApps = Array.isArray(state.addictiveApps) ? state.addictiveApps : [];
     const usefulApps = Array.isArray(state.usefulApps) ? state.usefulApps : [];
     const credits = Math.max(0, Number(state.credits) || 0);
-    const addictiveTotal = totalMinutes(addictiveApps);
-    const usefulTotal = totalMinutes(usefulApps);
-    const maxTotal = Math.max(addictiveTotal, usefulTotal, 1);
+    const distractionTotal = totalMinutes(addictiveApps);
+    const growthTotal = totalMinutes(usefulApps);
+    const maxTotal = Math.max(distractionTotal, growthTotal, 1);
 
-    renderHeader(credits, addictiveTotal, usefulTotal);
+    renderHeader(credits, distractionTotal, growthTotal);
     renderSection(els.addictiveMount, {
-      title: "Addictive",
-      total: addictiveTotal,
+      title: "Distraction",
+      total: distractionTotal,
       maxTotal,
       tone: "warn",
       apps: addictiveApps,
       disabled: credits === 0,
     });
     renderSection(els.usefulMount, {
-      title: "Useful",
-      total: usefulTotal,
+      title: "Growth",
+      total: growthTotal,
       maxTotal,
       tone: "good",
       apps: usefulApps,

@@ -3,9 +3,9 @@
   --surface: #ffffff;
   --text: #13294a;
   --muted: #5d6f8d;
-  --line: #1f6feb;
-  --line-soft: #d7e4fb;
-  --blue-fill: #1f6feb;
+  --line: #23395d;
+  --line-soft: #d1daea;
+  --blue-fill: #23395d;
   --red: #e25151;
   --orange: #e3a531;
   --green: #5f9b73;
@@ -21,8 +21,8 @@ body {
   margin: 0;
   font-family: var(--font-main);
   background:
-    radial-gradient(circle at 0% 0%, #e9f1ff 0%, transparent 35%),
-    radial-gradient(circle at 100% 0%, #eef4ff 0%, transparent 40%),
+    radial-gradient(circle at 0% 0%, #e9edf5 0%, transparent 35%),
+    radial-gradient(circle at 100% 0%, #edf1f7 0%, transparent 40%),
     var(--bg);
   color: var(--text);
   height: 100dvh;
@@ -111,7 +111,7 @@ h2 {
   border-radius: 16px;
   padding: 6px;
   width: min(460px, calc(100vw - 20px));
-  box-shadow: 0 10px 26px rgba(20, 73, 158, 0.14);
+  box-shadow: 0 10px 26px rgba(35, 57, 93, 0.16);
 }
 
 .nav-item {
@@ -178,7 +178,7 @@ h2 {
   border: 2px solid var(--line);
   border-radius: 14px;
   padding: 12px;
-  background: #eaf2ff;
+  background: #e8edf6;
   color: var(--text);
 }
 
@@ -259,7 +259,7 @@ input[type="text"]:focus,
 input[type="time"]:focus,
 select:focus,
 textarea:focus {
-  box-shadow: 0 0 0 4px rgba(31, 111, 235, 0.18);
+  box-shadow: 0 0 0 4px rgba(35, 57, 93, 0.2);
 }
 
 .btn-outline,
@@ -560,7 +560,7 @@ textarea:focus {
 
 .icon-pick.active {
   border-color: var(--line);
-  background: #eaf2ff;
+  background: #e8edf6;
 }
 
 .rule-list {
@@ -739,7 +739,7 @@ body[data-page="daily5-settings"] .daily5-surface {
 .selected-topic {
   border: 1px solid #cfdcf3;
   background: #f4f8ff;
-  color: #2f4f78;
+  color: #2f4468;
   border-radius: 999px;
   padding: 6px 10px;
   font-size: 0.86rem;
@@ -758,7 +758,7 @@ body[data-page="daily5-settings"] .daily5-surface {
 
 .topic-chip.active {
   border-color: var(--line);
-  background: #eaf2ff;
+  background: #e8edf6;
 }
 
 .daily5-actions {
@@ -790,7 +790,7 @@ body[data-page="daily5-settings"] .daily5-surface {
   padding: 4px 10px;
   font-size: 0.84rem;
   font-weight: 700;
-  color: #315588;
+  color: #2e476e;
   background: #f5f9ff;
 }
 
@@ -820,7 +820,7 @@ body[data-page="daily5-settings"] .daily5-surface {
   border-radius: 999px;
   border: 1px solid #d8e4f8;
   background: #f3f7ff;
-  color: #3b5c87;
+  color: #365279;
 }
 
 .daily5-refs {
@@ -836,7 +836,7 @@ body[data-page="daily5-settings"] .daily5-surface {
   border-radius: 999px;
   padding: 4px 9px;
   font-size: 0.78rem;
-  color: #2f4f78;
+  color: #2f4468;
   background: #f7fbff;
   text-decoration: none;
 }
@@ -999,30 +999,31 @@ body[data-page="home"] {
 .home-shell {
   max-width: 460px;
   margin: 0 auto;
-  min-height: 100dvh;
-  padding: 18px 14px calc(88px + env(safe-area-inset-bottom));
+  height: 100dvh;
+  padding: 14px 14px calc(80px + env(safe-area-inset-bottom));
   display: grid;
-  gap: 16px;
+  gap: 10px;
   align-content: start;
+  overflow: hidden;
 }
 
 .home-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 2px 6px;
+  padding: 0 2px 4px;
 }
 
 .home-title {
   margin: 0;
-  font-size: 1.62rem;
+  font-size: 1.5rem;
   letter-spacing: -0.02em;
   color: #171a1f;
 }
 
 .home-settings-btn {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 12px;
   background: #fff;
   border: 1px solid #e6e8ec;
@@ -1034,8 +1035,8 @@ body[data-page="home"] {
 }
 
 .home-settings-btn .icon-svg {
-  width: 19px;
-  height: 19px;
+  width: 17px;
+  height: 17px;
 }
 
 .home-card {
@@ -1046,7 +1047,7 @@ body[data-page="home"] {
 }
 
 .home-credits-card {
-  padding: 28px 18px;
+  padding: 18px 16px;
   display: grid;
   gap: 4px;
   justify-items: center;
@@ -1056,15 +1057,15 @@ body[data-page="home"] {
 .home-label {
   margin: 0;
   color: #6b7280;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   letter-spacing: 0.01em;
   text-transform: none;
   font-weight: 600;
 }
 
 .home-credits-value {
-  margin: 8px 0 0;
-  font-size: clamp(2.6rem, 13vw, 4rem);
+  margin: 6px 0 0;
+  font-size: clamp(2.2rem, 10vw, 3.2rem);
   font-weight: 760;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -1072,39 +1073,39 @@ body[data-page="home"] {
 }
 
 .home-credits-meta {
-  margin: 10px 0 0;
+  margin: 6px 0 0;
   color: #4b5563;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
 }
 
 .home-section-card {
-  padding: 14px 12px 12px;
+  padding: 10px 10px 10px;
 }
 
 .home-section-head {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  margin: 0 2px 12px;
+  margin: 0 2px 8px;
 }
 
 .home-section-head h2 {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: 0.98rem;
   letter-spacing: -0.01em;
   color: #1f2937;
 }
 
 .home-list {
   display: grid;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 7px;
+  margin-top: 8px;
 }
 
 .home-app-row {
   border: 1px solid #eceef2;
   border-radius: 12px;
-  padding: 10px;
+  padding: 8px;
   background: #fcfcfd;
 }
 
@@ -1122,13 +1123,13 @@ body[data-page="home"] {
 .home-app-left {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
 }
 
 .home-app-icon {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 8px;
   display: grid;
   place-items: center;
@@ -1185,8 +1186,8 @@ body[data-page="home"] {
 }
 
 .home-app-icon svg {
-  width: 23px;
-  height: 23px;
+  width: 21px;
+  height: 21px;
   stroke: currentColor;
   fill: none;
   stroke-width: 1.7;
@@ -1204,7 +1205,7 @@ body[data-page="home"] {
 }
 
 .home-app-name {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 560;
   color: #182230;
   white-space: nowrap;
@@ -1213,7 +1214,7 @@ body[data-page="home"] {
 }
 
 .home-app-minutes {
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   color: #4b5563;
   white-space: nowrap;
   display: inline-flex;
@@ -1228,7 +1229,7 @@ body[data-page="home"] {
 
 .home-progress {
   width: 100%;
-  height: 5px;
+  height: 4px;
   border-radius: 999px;
   background: #edf0f4;
   overflow: hidden;
