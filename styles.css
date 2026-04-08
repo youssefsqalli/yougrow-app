@@ -62,6 +62,7 @@ samp {
   justify-content: space-between;
   align-items: center;
   padding: 0 2px 4px;
+  height: 40px;
   min-height: 40px;
 }
 
@@ -70,6 +71,7 @@ samp {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 40px;
   gap: 10px;
 }
 
@@ -156,11 +158,10 @@ h2 {
   content: "";
   position: absolute;
   top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 22px;
+  left: 0;
+  right: 0;
   height: 3px;
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--line);
 }
 
@@ -759,6 +760,17 @@ body[data-page="daily5-settings"] .daily5-surface {
   text-decoration: none;
 }
 
+.topbar .btn-outline,
+.topbar .btn-solid,
+.topbar .daily5-settings-link {
+  min-height: 32px;
+  padding: 7px 11px;
+  font-size: 0.86rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
 .daily5-feed-surface {
   overflow: auto;
 }
@@ -1088,6 +1100,7 @@ body[data-page="home"] {
   align-items: center;
   justify-content: space-between;
   padding: 0 2px 4px;
+  height: 40px;
   min-height: 40px;
 }
 
