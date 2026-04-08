@@ -357,6 +357,10 @@ textarea:focus {
   background: transparent;
 }
 
+.task-item input[type="checkbox"] {
+  accent-color: var(--line);
+}
+
 .task-main {
   flex: 1;
   min-width: 0;
