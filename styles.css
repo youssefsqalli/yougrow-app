@@ -1,15 +1,17 @@
 :root {
-  --bg: #f7faff;
+  --bg: #f4f5f7;
   --surface: #ffffff;
-  --text: #13294a;
-  --muted: #5d6f8d;
-  --line: #23395d;
+  --text: #111317;
+  --muted: #5b6370;
+  --line: #123A5A;
   --line-soft: #d1daea;
-  --blue-fill: #23395d;
+  --blue-fill: #123A5A;
   --red: #e25151;
   --orange: #e3a531;
   --green: #5f9b73;
   --radius: 22px;
+  --shell-max: 460px;
+  --shell-pad-x: 14px;
   --font-main: "Aptos", "Oracle Sans", "Segoe UI", sans-serif;
 }
 
@@ -21,8 +23,8 @@ body {
   margin: 0;
   font-family: var(--font-main);
   background:
-    radial-gradient(circle at 0% 0%, #e9edf5 0%, transparent 35%),
-    radial-gradient(circle at 100% 0%, #edf1f7 0%, transparent 40%),
+    radial-gradient(circle at 0% 0%, #f3f5f9 0%, transparent 34%),
+    radial-gradient(circle at 100% 0%, #eef1f6 0%, transparent 40%),
     var(--bg);
   color: var(--text);
   height: 100dvh;
@@ -45,10 +47,10 @@ samp {
 }
 
 .app-shell {
-  max-width: 460px;
+  max-width: var(--shell-max);
   margin: 0 auto;
   height: 100dvh;
-  padding: 12px 14px 84px;
+  padding: 12px var(--shell-pad-x) 84px;
   display: grid;
   grid-template-rows: auto auto auto 1fr;
   gap: 10px;
@@ -58,7 +60,8 @@ samp {
 .topbar {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: center;
+  padding: 0 2px 4px;
 }
 
 .topbar-row {
@@ -81,6 +84,13 @@ samp {
 h1,
 h2 {
   margin: 0;
+}
+
+h1 {
+  font-size: 1.24rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text);
 }
 
 h2 {
@@ -110,8 +120,8 @@ h2 {
   border: 0;
   border-radius: 16px;
   padding: 6px;
-  width: min(460px, calc(100vw - 20px));
-  box-shadow: 0 10px 26px rgba(35, 57, 93, 0.16);
+  width: min(calc(var(--shell-max) - (var(--shell-pad-x) * 2)), calc(100vw - (var(--shell-pad-x) * 2)));
+  box-shadow: 0 10px 26px rgba(18, 58, 90, 0.16);
 }
 
 .nav-item {
@@ -134,9 +144,9 @@ h2 {
 
 .surface {
   background: var(--surface);
-  border: 0;
+  border: 1px solid #f0f1f3;
   border-radius: var(--radius);
-  box-shadow: 0 14px 32px rgba(20, 73, 158, 0.1);
+  box-shadow: 0 6px 18px rgba(17, 19, 23, 0.06);
   padding: 12px;
   min-height: 0;
   overflow: hidden;
@@ -259,7 +269,7 @@ input[type="text"]:focus,
 input[type="time"]:focus,
 select:focus,
 textarea:focus {
-  box-shadow: 0 0 0 4px rgba(35, 57, 93, 0.2);
+  box-shadow: 0 0 0 4px rgba(18, 58, 90, 0.2);
 }
 
 .btn-outline,
@@ -315,7 +325,7 @@ textarea:focus {
 
 .task-title {
   font-size: 1.02rem;
-  color: #23395d;
+  color: var(--line);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -955,8 +965,12 @@ body[data-page="calendar"] .calendar-grid {
 }
 
 @media (max-width: 780px) {
+  :root {
+    --shell-pad-x: 10px;
+  }
+
   .app-shell {
-    padding: 10px 10px 82px;
+    padding: 10px var(--shell-pad-x) 82px;
   }
 
   .calendar-header {
@@ -1012,15 +1026,15 @@ body[data-page="home"] {
     radial-gradient(circle at 0% 0%, #f3f5f9 0%, transparent 34%),
     radial-gradient(circle at 100% 0%, #eef1f6 0%, transparent 40%),
     #f4f5f7;
-  color: #111317;
+  color: var(--text);
   overflow: auto;
 }
 
 .home-shell {
-  max-width: 460px;
+  max-width: var(--shell-max);
   margin: 0 auto;
   height: 100dvh;
-  padding: 14px 14px calc(80px + env(safe-area-inset-bottom));
+  padding: 14px var(--shell-pad-x) calc(80px + env(safe-area-inset-bottom));
   display: grid;
   gap: 10px;
   align-content: start;
@@ -1036,9 +1050,9 @@ body[data-page="home"] {
 
 .home-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.24rem;
   letter-spacing: -0.02em;
-  color: #171a1f;
+  color: var(--text);
 }
 
 .home-settings-btn {
@@ -1089,7 +1103,11 @@ body[data-page="home"] {
   font-weight: 760;
   letter-spacing: -0.04em;
   line-height: 1;
-  color: #0f1726;
+  color: var(--line);
+}
+
+.home-credits-value.is-zero {
+  color: var(--red);
 }
 
 .home-credits-meta {

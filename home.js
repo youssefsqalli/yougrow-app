@@ -148,6 +148,7 @@
     const value = document.createElement("p");
     value.className = "home-credits-value";
     value.textContent = String(Math.max(0, Number(credits) || 0));
+    value.classList.toggle("is-zero", Number(credits) <= 0);
 
     const meta = document.createElement("p");
     meta.className = "home-credits-meta";
