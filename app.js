@@ -2,7 +2,7 @@
   const MAX_TASKS = 5;
   const DEFAULT_REMINDER_TIME = "08:00";
   const STORAGE_KEY = "vat_app_v1";
-  const DAILY5_AI_ENDPOINT = "/api/daily5";
+  const DAILY5_AI_ENDPOINT = "https://yougrow.ysqalli21.workers.dev/";
   const DAILY5_TOPIC_RULES_PROMPT = [
     "You are generating Daily Five from live retrieval (RAG) only.",
     "Generate exactly 5 questions based on latest factual updates from selected topics.",
@@ -296,7 +296,7 @@
         customTopics: [],
         language: detectDeviceLanguage(),
         prompt: "",
-        endpoint: "",
+        endpoint: DAILY5_AI_ENDPOINT,
       };
     }
     if (!Array.isArray(state.settings.daily5.topics)) {
@@ -310,7 +310,11 @@
       state.settings.daily5.prompt = "";
     }
     if (typeof state.settings.daily5.endpoint !== "string") {
-      state.settings.daily5.endpoint = "";
+      state.settings.daily5.endpoint = DAILY5_AI_ENDPOINT;
+    }
+    const endpointValue = String(state.settings.daily5.endpoint || "").trim();
+    if (!endpointValue || endpointValue.startsWith("/")) {
+      state.settings.daily5.endpoint = DAILY5_AI_ENDPOINT;
     }
     if (!state.daily5ByDate) {
       state.daily5ByDate = {};
@@ -1066,9 +1070,7 @@
       }
 
       if (!items) {
-        const endpointHint = state.settings.daily5.endpoint
-          ? "Please retry in a moment."
-          : "Set your Daily 5 API URL in Daily 5 Settings first.";
+        const endpointHint = "Please retry in a moment.";
         const detail = daily5LastError ? ` Latest error: ${daily5LastError}` : "";
         state.daily5ByDate[today] = {
           generatedAt: new Date().toISOString(),
@@ -1404,9 +1406,9 @@
   async function generateDaily5ItemsFromAI(params) {
     if (!window.fetch) return null;
     const configured = String(state.settings?.daily5?.endpoint || "").trim();
-    const endpoints = configured
-      ? [configured, DAILY5_AI_ENDPOINT, "/daily5"]
-      : [DAILY5_AI_ENDPOINT, "/daily5"];
+    const isAbsoluteUrl = /^https?:\/\//i.test(configured);
+    const primary = isAbsoluteUrl ? configured : DAILY5_AI_ENDPOINT;
+    const endpoints = primary === DAILY5_AI_ENDPOINT ? [primary] : [primary, DAILY5_AI_ENDPOINT];
     try {
       for (const endpoint of endpoints) {
         const controller = new AbortController();
@@ -2087,7 +2089,7 @@
           customTopics: [],
           language: detectDeviceLanguage(),
           prompt: "",
-          endpoint: "",
+          endpoint: DAILY5_AI_ENDPOINT,
         },
         firebase: {
           apiKey: "",
@@ -2126,7 +2128,7 @@
             customTopics: Array.isArray(parsed.settings?.daily5?.customTopics) ? parsed.settings.daily5.customTopics : [],
             language: detectDeviceLanguage(),
             prompt: typeof parsed.settings?.daily5?.prompt === "string" ? parsed.settings.daily5.prompt : "",
-            endpoint: typeof parsed.settings?.daily5?.endpoint === "string" ? parsed.settings.daily5.endpoint : "",
+            endpoint: typeof parsed.settings?.daily5?.endpoint === "string" ? parsed.settings.daily5.endpoint : DAILY5_AI_ENDPOINT,
           },
           firebase: {
             apiKey: parsed.settings?.firebase?.apiKey || "",
