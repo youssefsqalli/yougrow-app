@@ -106,6 +106,21 @@ function hasRequiredFormatMix(items) {
   return [...required].every((f) => seen.has(f));
 }
 
+function extractOutputText(payload) {
+  const direct = String(payload?.output_text || "").trim();
+  if (direct) return direct;
+  const output = Array.isArray(payload?.output) ? payload.output : [];
+  const chunks = [];
+  output.forEach((entry) => {
+    const content = Array.isArray(entry?.content) ? entry.content : [];
+    content.forEach((part) => {
+      const text = String(part?.text || "").trim();
+      if (text) chunks.push(text);
+    });
+  });
+  return chunks.join("\n").trim();
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
@@ -133,7 +148,8 @@ export default {
       : [];
     const language = String(body?.language || "en").trim();
     const todayIso = new Date().toISOString().slice(0, 10);
-    const model = env.DAILY5_MODEL || "gpt-5.1";
+    const configuredModel = String(env.DAILY5_MODEL || "").trim();
+    const modelCandidates = [...new Set([configuredModel, "gpt-5", "gpt-4.1", "gpt-4.1-mini"].filter(Boolean))];
 
     const systemPrompt = [
       "You generate Daily Five learning questions from latest web updates using retrieval.",
@@ -160,31 +176,57 @@ export default {
       .filter(Boolean)
       .join("\n\n");
 
-    const openaiRes = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model,
-        tools: [{ type: "web_search_preview" }],
-        input: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.2,
-        max_output_tokens: 5000,
-      }),
-    });
+    let parsed = null;
+    let openaiFailure = "";
+    let usedModel = "";
 
-    if (!openaiRes.ok) {
-      const err = await openaiRes.text();
-      return jsonResponse({ error: "OpenAI call failed", detail: err.slice(0, 600) }, 502);
+    for (const model of modelCandidates) {
+      const openaiRes = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          tools: [{ type: "web_search_preview" }],
+          input: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          max_output_tokens: 5000,
+        }),
+      });
+
+      if (!openaiRes.ok) {
+        const err = await openaiRes.text();
+        openaiFailure = `model=${model} status=${openaiRes.status} ${String(err || "").slice(0, 400)}`;
+        continue;
+      }
+
+      const payload = await openaiRes.json();
+      const parsedCandidate = safeJsonParse(extractOutputText(payload));
+      if (!parsedCandidate || !Array.isArray(parsedCandidate.items)) {
+        openaiFailure = `model=${model} returned unparsable output`;
+        continue;
+      }
+
+      parsed = parsedCandidate;
+      usedModel = model;
+      break;
     }
 
-    const payload = await openaiRes.json();
-    const parsed = safeJsonParse(String(payload?.output_text || ""));
+    if (!parsed) {
+      return jsonResponse(
+        {
+          error: "OpenAI call failed",
+          detail: openaiFailure || "No model candidate returned valid output.",
+          modelsTried: modelCandidates,
+        },
+        502
+      );
+    }
+
     if (!parsed || !Array.isArray(parsed.items)) {
       return jsonResponse({ error: "Model output could not be parsed as Daily5 JSON." }, 502);
     }
@@ -206,6 +248,6 @@ export default {
       return jsonResponse({ error: "Insufficient Daily5 format diversity." }, 502);
     }
 
-    return jsonResponse({ items: deduped.slice(0, 5) }, 200);
+    return jsonResponse({ items: deduped.slice(0, 5), model: usedModel }, 200);
   },
 };

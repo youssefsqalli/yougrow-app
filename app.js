@@ -1433,7 +1433,7 @@
           let detail = "";
           try {
             const maybeJson = await res.clone().json();
-            detail = String(maybeJson?.error || maybeJson?.detail || "").trim();
+            detail = String(maybeJson?.detail || maybeJson?.error || "").trim();
           } catch (_) {
             try {
               detail = String(await res.text()).trim();
