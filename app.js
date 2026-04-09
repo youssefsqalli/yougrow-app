@@ -242,6 +242,7 @@
   let showIconPalette = false;
   let showSavedRules = false;
   let daily5Generating = false;
+  let daily5LastError = "";
 
   init();
 
@@ -1030,6 +1031,7 @@
   async function generateDaily5(forceNewSet) {
     if (daily5Generating) return;
     daily5Generating = true;
+    daily5LastError = "";
     const today = getTodayKey();
     const prefs = state.settings.daily5 || {
       topics: ["Oracle"],
@@ -1067,6 +1069,7 @@
         const endpointHint = state.settings.daily5.endpoint
           ? "Please retry in a moment."
           : "Set your Daily 5 API URL in Daily 5 Settings first.";
+        const detail = daily5LastError ? ` Latest error: ${daily5LastError}` : "";
         state.daily5ByDate[today] = {
           generatedAt: new Date().toISOString(),
           language,
@@ -1074,7 +1077,7 @@
           prompt,
           signature: makeDaily5Signature(prefs),
           blocked: true,
-          errorMessage: `Live latest-update generation is unavailable right now. ${endpointHint}`,
+          errorMessage: `Live latest-update generation is unavailable right now. ${endpointHint}${detail}`,
           items: [],
         };
         saveState();
@@ -1407,7 +1410,7 @@
     try {
       for (const endpoint of endpoints) {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 14000);
+        const timer = setTimeout(() => controller.abort(), 30000);
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1424,9 +1427,26 @@
           signal: controller.signal,
         });
         clearTimeout(timer);
-        if (!res.ok) continue;
+        if (!res.ok) {
+          let detail = "";
+          try {
+            const maybeJson = await res.clone().json();
+            detail = String(maybeJson?.error || maybeJson?.detail || "").trim();
+          } catch (_) {
+            try {
+              detail = String(await res.text()).trim();
+            } catch (_) {
+              detail = "";
+            }
+          }
+          daily5LastError = `${endpoint} returned ${res.status}${detail ? `: ${detail.slice(0, 180)}` : ""}`;
+          continue;
+        }
         const data = await res.json();
-        if (!Array.isArray(data?.items) || data.items.length < 5) continue;
+        if (!Array.isArray(data?.items) || data.items.length < 5) {
+          daily5LastError = `${endpoint} returned an invalid Daily 5 payload`;
+          continue;
+        }
         const normalized = data.items.slice(0, 5).map((item) => ({
           associatedTopic: item.associatedTopic || item.topic || "",
           format: item.format || "mcq",
@@ -1458,11 +1478,18 @@
               }))
             : undefined,
         }));
-        if (!validateTopicConstrainedItems(normalized, params.topics || [])) continue;
+        if (!validateTopicConstrainedItems(normalized, params.topics || [])) {
+          daily5LastError = `${endpoint} returned off-topic or invalid questions`;
+          continue;
+        }
         return normalized;
       }
       return null;
-    } catch (_) {
+    } catch (err) {
+      const msg = String(err?.message || err || "Unknown error");
+      daily5LastError = msg.toLowerCase().includes("aborted")
+        ? "Request timed out (30s) while generating latest updates"
+        : msg.slice(0, 180);
       return null;
     }
   }
