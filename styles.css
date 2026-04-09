@@ -3,10 +3,10 @@
   --surface: #ffffff;
   --text: #111317;
   --muted: #5b6370;
-  --line: #123A5A;
+  --line: #1B4F73;
   --line-soft: #d1daea;
-  --blue-fill: #123A5A;
-  --red: #e25151;
+  --blue-fill: #1B4F73;
+  --red: #6D071A;
   --orange: #e3a531;
   --green: #5f9b73;
   --radius: 22px;
@@ -219,7 +219,7 @@ h2 {
 
 .todo-top {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: flex-start;
   gap: 12px;
 }

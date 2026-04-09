@@ -1671,7 +1671,7 @@
   }
 
   function scoreColor(percent) {
-    if (percent <= 39) return "#e25151";
+    if (percent <= 39) return "#6D071A";
     if (percent <= 74) return "#e3a531";
     return "#5f9b73";
   }
