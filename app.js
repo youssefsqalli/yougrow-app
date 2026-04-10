@@ -220,6 +220,10 @@
     saveFirebaseBtn: document.getElementById("saveFirebaseBtn"),
     connectPushBtn: document.getElementById("connectPushBtn"),
     pushStatusText: document.getElementById("pushStatusText"),
+    syncCodeInput: document.getElementById("syncCodeInput"),
+    saveSyncCodeBtn: document.getElementById("saveSyncCodeBtn"),
+    syncNowBtn: document.getElementById("syncNowBtn"),
+    syncStatusText: document.getElementById("syncStatusText"),
     dayStrip: document.getElementById("dayStrip"),
     iconRuleForm: document.getElementById("iconRuleForm"),
     ruleKeyword: document.getElementById("ruleKeyword"),
@@ -258,11 +262,17 @@
       els.reminderStart.value = state.settings.reminderStart;
     }
     renderFirebaseFields();
+    renderSyncFields();
 
     registerServiceWorker();
     render();
-    initFirebaseRuntime().then((ok) => {
-      if (ok) syncCloudStatus();
+    initFirebaseRuntime(false).then(async (ok) => {
+      if (ok) {
+        await syncCloudNow(false);
+        await syncCloudStatus();
+      } else {
+        updateSyncStatus("Cloud sync is off. Add Firebase config to enable sync.");
+      }
     });
 
     startReminderLoop();
@@ -315,6 +325,12 @@
     const endpointValue = String(state.settings.daily5.endpoint || "").trim();
     if (!endpointValue || endpointValue.startsWith("/")) {
       state.settings.daily5.endpoint = DAILY5_AI_ENDPOINT;
+    }
+    if (typeof state.settings.syncCode !== "string") {
+      state.settings.syncCode = "";
+    }
+    if (typeof state.settings.syncStatus !== "string") {
+      state.settings.syncStatus = "";
     }
     if (!state.daily5ByDate) {
       state.daily5ByDate = {};
@@ -373,6 +389,12 @@
     }
     if (els.connectPushBtn) {
       els.connectPushBtn.addEventListener("click", onConnectPush);
+    }
+    if (els.saveSyncCodeBtn) {
+      els.saveSyncCodeBtn.addEventListener("click", onSaveSyncCode);
+    }
+    if (els.syncNowBtn) {
+      els.syncNowBtn.addEventListener("click", () => void syncCloudNow(true));
     }
 
     if (els.iconRuleForm) {
@@ -460,6 +482,7 @@
 
     els.taskInput.value = "";
     state.today[today].createdAt = new Date().toISOString();
+    touchDay(today);
     saveState();
     syncCloudStatus();
     render();
@@ -474,6 +497,7 @@
 
     task.done = !task.done;
     task.completedAt = task.done ? new Date().toISOString() : null;
+    touchDay(dayKey);
     saveState();
     syncCloudStatus();
     render();
@@ -493,6 +517,7 @@
     if (!nextTitle) return;
 
     task.title = nextTitle;
+    touchDay(dayKey);
     saveState();
     syncCloudStatus();
     render();
@@ -503,6 +528,7 @@
 
     ensureDayPlan(dayKey);
     state.today[dayKey].tasks = state.today[dayKey].tasks.filter((t) => t.id !== taskId);
+    touchDay(dayKey);
     saveState();
     syncCloudStatus();
     render();
@@ -511,6 +537,7 @@
   function resetToday() {
     const today = getTodayKey();
     state.today[today] = { tasks: [], createdAt: null };
+    touchDay(today);
     saveState();
     syncCloudStatus();
     render();
@@ -518,12 +545,40 @@
 
   function ensureDayPlan(dayKey) {
     if (!state.today[dayKey]) {
-      state.today[dayKey] = { tasks: [], createdAt: null };
+      state.today[dayKey] = { tasks: [], createdAt: null, updatedAt: null };
     }
   }
 
+  function touchDay(dayKey) {
+    ensureDayPlan(dayKey);
+    state.today[dayKey].updatedAt = new Date().toISOString();
+  }
+
+  function getSyncCode() {
+    return String(state.settings.syncCode || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]/g, "")
+      .slice(0, 48);
+  }
+
+  function isoToMs(value) {
+    const ms = Date.parse(String(value || ""));
+    return Number.isFinite(ms) ? ms : 0;
+  }
+
+  function sanitizeCloudTasks(tasks) {
+    if (!Array.isArray(tasks)) return [];
+    return tasks.slice(0, MAX_TASKS).map((task) => ({
+      id: String(task?.id || cryptoRandomId()),
+      title: String(task?.title || "").trim().slice(0, 120),
+      done: Boolean(task?.done),
+      completedAt: task?.completedAt ? String(task.completedAt) : null,
+    })).filter((task) => task.title.length > 0);
+  }
+
   async function syncCloudStatus() {
-    if (!fb.ready || !fb.firestore || !state.settings.fcmToken) return;
+    if (!fb.ready || !fb.firestore) return;
 
     try {
       const todayKey = getTodayKey();
@@ -536,28 +591,97 @@
         saveState();
       }
 
-      const deviceRef = fb.firestore.collection("devices").doc(state.meta.deviceId);
-      await deviceRef.set(
-        {
-          fcmToken: state.settings.fcmToken,
-          reminderStart: state.settings.reminderStart,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true }
-      );
+      if (state.settings.fcmToken) {
+        const deviceRef = fb.firestore.collection("devices").doc(state.meta.deviceId);
+        await deviceRef.set(
+          {
+            fcmToken: state.settings.fcmToken,
+            reminderStart: state.settings.reminderStart,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
 
-      await deviceRef.collection("days").doc(todayKey).set(
+        await deviceRef.collection("days").doc(todayKey).set(
+          {
+            date: todayKey,
+            taskCount: tasks.length,
+            completedCount: completed,
+            hasAnyTask: tasks.length > 0,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      }
+
+      const syncCode = getSyncCode();
+      if (!syncCode) {
+        updateSyncStatus("Set a Sync Code on both devices to link PC and phone.");
+        return;
+      }
+
+      const localUpdatedAt = state.today[todayKey].updatedAt || new Date().toISOString();
+      await fb.firestore.collection("syncSpaces").doc(syncCode).collection("days").doc(todayKey).set(
         {
           date: todayKey,
+          tasks: tasks,
           taskCount: tasks.length,
           completedCount: completed,
-          hasAnyTask: tasks.length > 0,
-          updatedAt: new Date().toISOString(),
+          createdAt: state.today[todayKey].createdAt || null,
+          updatedAt: localUpdatedAt,
+          sourceDeviceId: state.meta.deviceId,
         },
         { merge: true }
       );
+      updateSyncStatus(`Synced at ${new Date().toLocaleTimeString()}`);
     } catch (err) {
-      updatePushStatus(`Cloud sync failed: ${String(err.message || err)}`);
+      updateSyncStatus(`Sync failed: ${String(err.message || err)}`);
+    }
+  }
+
+  async function syncCloudNow(pushAfterPull) {
+    if (!hasFirebaseConfig()) {
+      updateSyncStatus("Add Firebase config first, then connect sync.");
+      return;
+    }
+    if (!fb.ready || !fb.firestore) {
+      const ok = await initFirebaseRuntime(false);
+      if (!ok) {
+        updateSyncStatus("Firebase not ready. Check your config.");
+        return;
+      }
+    }
+
+    const syncCode = getSyncCode();
+    if (!syncCode) {
+      updateSyncStatus("Enter a Sync Code (same on PC and phone).");
+      return;
+    }
+
+    try {
+      const todayKey = getTodayKey();
+      ensureDayPlan(todayKey);
+      const docRef = fb.firestore.collection("syncSpaces").doc(syncCode).collection("days").doc(todayKey);
+      const snap = await docRef.get();
+      if (snap.exists) {
+        const remote = snap.data() || {};
+        const remoteUpdated = isoToMs(remote.updatedAt);
+        const localUpdated = isoToMs(state.today[todayKey].updatedAt);
+        if (remoteUpdated > localUpdated) {
+          state.today[todayKey] = {
+            tasks: sanitizeCloudTasks(remote.tasks),
+            createdAt: remote.createdAt ? String(remote.createdAt) : null,
+            updatedAt: remote.updatedAt ? String(remote.updatedAt) : new Date().toISOString(),
+          };
+          saveState();
+          render();
+          updateSyncStatus(`Pulled latest tasks at ${new Date().toLocaleTimeString()}`);
+          if (!pushAfterPull) return;
+        }
+      }
+      await syncCloudStatus();
+    } catch (err) {
+      updateSyncStatus(`Sync failed: ${String(err.message || err)}`);
     }
   }
 
@@ -613,6 +737,15 @@
     updatePushStatus(state.settings.pushStatus || "Firebase not connected");
   }
 
+  function renderSyncFields() {
+    if (els.syncCodeInput) {
+      els.syncCodeInput.value = state.settings.syncCode || "";
+    }
+    if (els.syncStatusText) {
+      els.syncStatusText.textContent = state.settings.syncStatus || "Sync not connected yet.";
+    }
+  }
+
   function onSaveFirebaseConfig() {
     if (!els.fbApiKey) return;
     state.settings.firebase = {
@@ -632,8 +765,22 @@
     const ok = await initFirebaseRuntime(true);
     if (ok) {
       updatePushStatus("Push connected");
-      await syncCloudStatus();
+      await syncCloudNow(true);
     }
+  }
+
+  function onSaveSyncCode() {
+    if (!els.syncCodeInput) return;
+    const raw = String(els.syncCodeInput.value || "").trim();
+    const normalized = raw.toLowerCase().replace(/[^a-z0-9-_]/g, "").slice(0, 48);
+    if (!normalized) {
+      updateSyncStatus("Enter a valid Sync Code.");
+      return;
+    }
+    state.settings.syncCode = normalized;
+    saveState();
+    renderSyncFields();
+    void syncCloudNow(true);
   }
 
   function updatePushStatus(text) {
@@ -641,6 +788,14 @@
       els.pushStatusText.textContent = text;
     }
     state.settings.pushStatus = text;
+    saveState();
+  }
+
+  function updateSyncStatus(text) {
+    if (els.syncStatusText) {
+      els.syncStatusText.textContent = text;
+    }
+    state.settings.syncStatus = text;
     saveState();
   }
 
@@ -666,10 +821,18 @@
 
       fb.app = firebase.app();
       fb.firestore = firebase.firestore();
-      fb.messaging = firebase.messaging();
+      try {
+        fb.messaging = firebase.messaging();
+      } catch (_) {
+        fb.messaging = null;
+      }
       fb.ready = true;
 
       if (requestToken) {
+        if (!fb.messaging) {
+          updatePushStatus("Push is not supported on this device/browser");
+          return true;
+        }
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
           updatePushStatus("Notification permission denied");
@@ -677,7 +840,7 @@
         }
       }
 
-      if (requestToken || !state.settings.fcmToken) {
+      if (fb.messaging && (requestToken || !state.settings.fcmToken)) {
         const reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
         const readyReg = await navigator.serviceWorker.ready;
         const target = readyReg.active || reg.active;
@@ -2099,6 +2262,8 @@
           appId: "",
           vapidKey: "",
         },
+        syncCode: "",
+        syncStatus: "",
         fcmToken: "",
         pushStatus: "Firebase not connected",
       },
@@ -2138,6 +2303,8 @@
             appId: parsed.settings?.firebase?.appId || "",
             vapidKey: parsed.settings?.firebase?.vapidKey || "",
           },
+          syncCode: typeof parsed.settings?.syncCode === "string" ? parsed.settings.syncCode : "",
+          syncStatus: typeof parsed.settings?.syncStatus === "string" ? parsed.settings.syncStatus : "",
           fcmToken: parsed.settings?.fcmToken || "",
           pushStatus: parsed.settings?.pushStatus || "Firebase not connected",
         },

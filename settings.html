@@ -51,6 +51,39 @@
       </nav>
 
       <section class="surface settings-stack">
+        <div class="setting-row setting-row-stack">
+          <div>
+            <h2>Cloud Sync (PC + Phone)</h2>
+            <p class="muted">Use the same Sync Code on both devices to share today&apos;s tasks.</p>
+          </div>
+          <div class="rule-inline">
+            <input id="syncCodeInput" type="text" maxlength="48" placeholder="your-sync-code" />
+            <button id="saveSyncCodeBtn" class="btn-solid" type="button">Connect</button>
+            <button id="syncNowBtn" class="btn-outline" type="button">Sync now</button>
+          </div>
+          <p id="syncStatusText" class="muted">Sync not connected yet.</p>
+        </div>
+
+        <div class="setting-row setting-row-stack">
+          <div>
+            <h2>Firebase Config</h2>
+            <p class="muted">Required once to enable cloud sync and optional push reminders.</p>
+          </div>
+          <form id="firebaseForm" class="firebase-grid" onsubmit="return false;">
+            <input id="fbApiKey" type="text" placeholder="apiKey" />
+            <input id="fbAuthDomain" type="text" placeholder="authDomain" />
+            <input id="fbProjectId" type="text" placeholder="projectId" />
+            <input id="fbMessagingSenderId" type="text" placeholder="messagingSenderId" />
+            <input id="fbAppId" type="text" placeholder="appId" />
+            <input id="fbVapidKey" type="text" placeholder="vapidKey (optional)" />
+            <div class="firebase-actions">
+              <button id="saveFirebaseBtn" class="btn-outline" type="button">Save Firebase</button>
+              <button id="connectPushBtn" class="btn-solid" type="button">Connect Push</button>
+            </div>
+          </form>
+          <p id="pushStatusText" class="muted">Firebase not connected.</p>
+        </div>
+
         <div class="setting-row">
           <div>
             <h2>Notifications</h2>
@@ -92,6 +125,9 @@
     </main>
 
     <script src="nav.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
