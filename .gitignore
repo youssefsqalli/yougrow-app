@@ -4,3 +4,10 @@ firebase/functions/node_modules/
 android-screen-time-bridge/.gradle/
 android-screen-time-bridge/**/build/
 android-screen-time-bridge/local.properties
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
