@@ -211,5 +211,9 @@
     });
   }
 
+  window.YouGrowHome = {
+    renderDashboard,
+  };
+
   renderDashboard(data);
 })();

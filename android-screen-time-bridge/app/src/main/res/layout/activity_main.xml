@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  tools:context=".MainActivity">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="YouGrow Screen Time Bridge"
+      android:textSize="22sp"
+      android:textStyle="bold" />
+
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:text="Collect Android screen time, classify apps, and upload to Firestore under your Sync Code." />
+
+    <EditText
+      android:id="@+id/projectIdInput"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="20dp"
+      android:hint="Firebase projectId"
+      android:inputType="text" />
+
+    <EditText
+      android:id="@+id/apiKeyInput"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:hint="Firebase Web apiKey"
+      android:inputType="text" />
+
+    <EditText
+      android:id="@+id/syncCodeInput"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:hint="Sync Code (same as web app)"
+      android:inputType="text" />
+
+    <Button
+      android:id="@+id/saveConfigBtn"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="14dp"
+      android:text="Save Config" />
+
+    <Button
+      android:id="@+id/openUsageAccessBtn"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:text="Open Usage Access Settings" />
+
+    <Button
+      android:id="@+id/captureUploadBtn"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:text="Capture + Upload Today" />
+
+    <TextView
+      android:id="@+id/statusText"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="16dp"
+      android:text="Status: idle"
+      android:textStyle="bold" />
+
+    <TextView
+      android:id="@+id/previewText"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:text="Preview will appear here" />
+
+  </LinearLayout>
+</ScrollView>

@@ -54,12 +54,12 @@
         <div class="setting-row setting-row-stack">
           <div>
             <h2>Cloud Sync (PC + Phone)</h2>
-            <p class="muted">Use the same Sync Code on both devices to share today&apos;s tasks.</p>
+            <p class="muted">Use the same Sync Code on both devices. This works with Firebase even if push notifications are disabled.</p>
           </div>
           <div class="rule-inline">
             <input id="syncCodeInput" type="text" maxlength="48" placeholder="your-sync-code" />
             <button id="saveSyncCodeBtn" class="btn-solid" type="button">Connect</button>
-            <button id="syncNowBtn" class="btn-outline" type="button">Sync now</button>
+            <button id="syncNowBtn" class="btn-outline" type="button">Sync Now (No Push)</button>
           </div>
           <p id="syncStatusText" class="muted">Sync not connected yet.</p>
         </div>
@@ -67,7 +67,7 @@
         <div class="setting-row setting-row-stack">
           <div>
             <h2>Firebase Config</h2>
-            <p class="muted">Required once to enable cloud sync and optional push reminders.</p>
+            <p class="muted">Required once for cloud sync. Push notifications are optional.</p>
           </div>
           <form id="firebaseForm" class="firebase-grid" onsubmit="return false;">
             <input id="fbApiKey" type="text" placeholder="apiKey" />
@@ -77,8 +77,8 @@
             <input id="fbAppId" type="text" placeholder="appId" />
             <input id="fbVapidKey" type="text" placeholder="vapidKey (optional)" />
             <div class="firebase-actions">
-              <button id="saveFirebaseBtn" class="btn-outline" type="button">Save Firebase</button>
-              <button id="connectPushBtn" class="btn-solid" type="button">Connect Push</button>
+              <button id="saveFirebaseBtn" class="btn-outline" type="button">Save Firebase (Sync Only)</button>
+              <button id="connectPushBtn" class="btn-solid" type="button">Enable Push (Optional)</button>
             </div>
           </form>
           <p id="pushStatusText" class="muted">Firebase not connected.</p>
@@ -120,6 +120,15 @@
           </div>
           <button id="toggleSavedRulesBtn" class="btn-outline" type="button">Show saved rules</button>
           <ul id="iconRuleList" class="rule-list hidden"></ul>
+        </div>
+
+        <div class="setting-row setting-row-stack">
+          <div>
+            <h2>Data Reset</h2>
+            <p class="muted">Download a JSON archive of past Todo days, then clear only past Todo history.</p>
+          </div>
+          <button id="archiveClearPastBtn" class="btn-outline" type="button">Archive + Clear Past Todo</button>
+          <p id="archiveClearStatusText" class="muted">No reset performed yet.</p>
         </div>
       </section>
     </main>

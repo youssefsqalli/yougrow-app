@@ -86,3 +86,12 @@ Deploy quick steps:
 4. Optional env var: `DAILY5_MODEL` (default `gpt-5.1`).
 5. Deploy and copy your Worker URL (example: `https://yougrow-daily5.<subdomain>.workers.dev`).
 6. In app `Daily 5 Settings`, paste that URL in **Daily 5 API** and save.
+
+## Android Screen Time Bridge (new)
+If you want real screen-time minutes from your Android phone, use:
+- `android-screen-time-bridge/`
+
+This native bridge reads Usage Access stats, uploads `addictiveApps` and `usefulApps` to:
+- `syncSpaces/{syncCode}/screenTime/{YYYY-MM-DD}`
+
+Then Home reads that cloud data (when Firebase config + Sync Code are set in Settings).

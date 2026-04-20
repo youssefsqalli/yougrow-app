@@ -543,7 +543,8 @@ textarea:focus {
 }
 
 .day-cell.future,
-.day-cell.pre-start {
+.day-cell.pre-start,
+.day-cell.level-empty {
   background: #ffffff;
   color: #abc0dd;
   border-color: #e2ecfb;

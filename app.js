@@ -1,5 +1,6 @@
 (function () {
   const MAX_TASKS = 5;
+  const DAY_STRIP_COUNT = 30;
   const DEFAULT_REMINDER_TIME = "08:00";
   const STORAGE_KEY = "vat_app_v1";
   const DAILY5_AI_ENDPOINT = "https://yougrow.ysqalli21.workers.dev/";
@@ -224,6 +225,8 @@
     saveSyncCodeBtn: document.getElementById("saveSyncCodeBtn"),
     syncNowBtn: document.getElementById("syncNowBtn"),
     syncStatusText: document.getElementById("syncStatusText"),
+    archiveClearPastBtn: document.getElementById("archiveClearPastBtn"),
+    archiveClearStatusText: document.getElementById("archiveClearStatusText"),
     dayStrip: document.getElementById("dayStrip"),
     iconRuleForm: document.getElementById("iconRuleForm"),
     ruleKeyword: document.getElementById("ruleKeyword"),
@@ -247,6 +250,7 @@
   let showSavedRules = false;
   let daily5Generating = false;
   let daily5LastError = "";
+  let scheduledFullSyncTimer = null;
 
   init();
 
@@ -271,7 +275,7 @@
         await syncCloudNow(false);
         await syncCloudStatus();
       } else {
-        updateSyncStatus("Cloud sync is off. Add Firebase config to enable sync.");
+        updateSyncStatus("Cloud sync is off. Save Firebase config first.");
       }
     });
 
@@ -346,6 +350,9 @@
     if (!state.meta.daily5UsedFacts || typeof state.meta.daily5UsedFacts !== "object") {
       state.meta.daily5UsedFacts = {};
     }
+    if (!state.meta.todoDeletedDays || typeof state.meta.todoDeletedDays !== "object") {
+      state.meta.todoDeletedDays = {};
+    }
 
     syncOldTodayIntoHistory();
     saveState();
@@ -395,6 +402,9 @@
     }
     if (els.syncNowBtn) {
       els.syncNowBtn.addEventListener("click", () => void syncCloudNow(true));
+    }
+    if (els.archiveClearPastBtn) {
+      els.archiveClearPastBtn.addEventListener("click", onArchiveAndClearPastTodo);
     }
 
     if (els.iconRuleForm) {
@@ -452,24 +462,35 @@
         onSaveDaily5Endpoint();
       });
     }
+
+    // Keep PC/phone sync fresh when user comes back to the app.
+    window.addEventListener("focus", () => {
+      if (!hasFirebaseConfig() || !getSyncCode()) return;
+      void syncCloudNow(false);
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") return;
+      if (!hasFirebaseConfig() || !getSyncCode()) return;
+      void syncCloudNow(false);
+    });
   }
 
   function onAddTask(e) {
     e.preventDefault();
-    if (selectedDayKey !== getTodayKey()) return;
+    if (!isEditableDayKey(selectedDayKey)) return;
 
     const text = (els.taskInput.value || "").trim();
 
     if (!text) return;
 
-    const today = getTodayKey();
-    ensureDayPlan(today);
+    const targetDay = selectedDayKey;
+    ensureDayPlan(targetDay);
 
-    if (state.today[today].tasks.length >= MAX_TASKS) {
+    if (state.today[targetDay].tasks.length >= MAX_TASKS) {
       return;
     }
 
-    state.today[today].tasks.push({
+    state.today[targetDay].tasks.push({
       id: cryptoRandomId(),
       title: text,
       done: false,
@@ -477,19 +498,19 @@
     });
 
     if (!state.meta.startedOn) {
-      state.meta.startedOn = today;
+      state.meta.startedOn = getTodayKey();
     }
 
     els.taskInput.value = "";
-    state.today[today].createdAt = new Date().toISOString();
-    touchDay(today);
+    state.today[targetDay].createdAt = state.today[targetDay].createdAt || new Date().toISOString();
+    touchDay(targetDay);
     saveState();
-    syncCloudStatus();
+    syncCloudStatus(targetDay);
     render();
   }
 
   function onToggleTask(taskId, dayKey) {
-    if (dayKey !== getTodayKey()) return;
+    if (!isEditableDayKey(dayKey)) return;
 
     ensureDayPlan(dayKey);
     const task = state.today[dayKey].tasks.find((t) => t.id === taskId);
@@ -499,12 +520,12 @@
     task.completedAt = task.done ? new Date().toISOString() : null;
     touchDay(dayKey);
     saveState();
-    syncCloudStatus();
+    syncCloudStatus(dayKey);
     render();
   }
 
   function onEditTask(taskId, dayKey) {
-    if (dayKey !== getTodayKey()) return;
+    if (!isEditableDayKey(dayKey)) return;
 
     ensureDayPlan(dayKey);
     const task = state.today[dayKey].tasks.find((t) => t.id === taskId);
@@ -519,18 +540,18 @@
     task.title = nextTitle;
     touchDay(dayKey);
     saveState();
-    syncCloudStatus();
+    syncCloudStatus(dayKey);
     render();
   }
 
   function onDeleteTask(taskId, dayKey) {
-    if (dayKey !== getTodayKey()) return;
+    if (!isEditableDayKey(dayKey)) return;
 
     ensureDayPlan(dayKey);
     state.today[dayKey].tasks = state.today[dayKey].tasks.filter((t) => t.id !== taskId);
     touchDay(dayKey);
     saveState();
-    syncCloudStatus();
+    syncCloudStatus(dayKey);
     render();
   }
 
@@ -539,7 +560,7 @@
     state.today[today] = { tasks: [], createdAt: null };
     touchDay(today);
     saveState();
-    syncCloudStatus();
+    syncCloudStatus(today);
     render();
   }
 
@@ -577,42 +598,75 @@
     })).filter((task) => task.title.length > 0);
   }
 
-  async function syncCloudStatus() {
+  function ensureTodoDeletedMap() {
+    if (!state.meta.todoDeletedDays || typeof state.meta.todoDeletedDays !== "object") {
+      state.meta.todoDeletedDays = {};
+    }
+  }
+
+  function buildDayDocPayload(dayKey, day) {
+    ensureDayPlan(dayKey);
+    const safeTasks = sanitizeCloudTasks(day?.tasks);
+    const completed = safeTasks.filter((t) => t.done).length;
+    return {
+      date: dayKey,
+      tasks: safeTasks,
+      taskCount: safeTasks.length,
+      completedCount: completed,
+      createdAt: day?.createdAt ? String(day.createdAt) : null,
+      updatedAt: day?.updatedAt ? String(day.updatedAt) : new Date().toISOString(),
+      sourceDeviceId: state.meta.deviceId || "",
+    };
+  }
+
+  function sanitizeDayRecord(record) {
+    return {
+      tasks: sanitizeCloudTasks(record?.tasks),
+      createdAt: record?.createdAt ? String(record.createdAt) : null,
+      updatedAt: record?.updatedAt ? String(record.updatedAt) : new Date().toISOString(),
+    };
+  }
+
+  async function pushDeviceStatus(todayKey) {
+    if (!state.settings.fcmToken || !fb.ready || !fb.firestore) return;
+    ensureDayPlan(todayKey);
+    const tasks = state.today[todayKey].tasks || [];
+    const completed = tasks.filter((t) => t.done).length;
+    const deviceRef = fb.firestore.collection("devices").doc(state.meta.deviceId);
+    await deviceRef.set(
+      {
+        fcmToken: state.settings.fcmToken,
+        reminderStart: state.settings.reminderStart,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    await deviceRef.collection("days").doc(todayKey).set(
+      {
+        date: todayKey,
+        taskCount: tasks.length,
+        completedCount: completed,
+        hasAnyTask: tasks.length > 0,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  }
+
+  async function syncCloudStatus(dayKey) {
     if (!fb.ready || !fb.firestore) return;
 
     try {
+      const targetDay = dayKey || getTodayKey();
       const todayKey = getTodayKey();
-      ensureDayPlan(todayKey);
-      const tasks = state.today[todayKey].tasks || [];
-      const completed = tasks.filter((t) => t.done).length;
+      ensureDayPlan(targetDay);
 
       if (!state.meta.deviceId) {
         state.meta.deviceId = cryptoRandomId();
         saveState();
       }
 
-      if (state.settings.fcmToken) {
-        const deviceRef = fb.firestore.collection("devices").doc(state.meta.deviceId);
-        await deviceRef.set(
-          {
-            fcmToken: state.settings.fcmToken,
-            reminderStart: state.settings.reminderStart,
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-
-        await deviceRef.collection("days").doc(todayKey).set(
-          {
-            date: todayKey,
-            taskCount: tasks.length,
-            completedCount: completed,
-            hasAnyTask: tasks.length > 0,
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-      }
+      await pushDeviceStatus(todayKey);
 
       const syncCode = getSyncCode();
       if (!syncCode) {
@@ -620,28 +674,27 @@
         return;
       }
 
-      const localUpdatedAt = state.today[todayKey].updatedAt || new Date().toISOString();
-      await fb.firestore.collection("syncSpaces").doc(syncCode).collection("days").doc(todayKey).set(
-        {
-          date: todayKey,
-          tasks: tasks,
-          taskCount: tasks.length,
-          completedCount: completed,
-          createdAt: state.today[todayKey].createdAt || null,
-          updatedAt: localUpdatedAt,
-          sourceDeviceId: state.meta.deviceId,
-        },
-        { merge: true }
-      );
+      const payload = buildDayDocPayload(targetDay, state.today[targetDay]);
+      await fb.firestore.collection("syncSpaces").doc(syncCode).collection("days").doc(targetDay).set(payload, { merge: true });
       updateSyncStatus(`Synced at ${new Date().toLocaleTimeString()}`);
+      scheduleFullSyncSoon();
     } catch (err) {
       updateSyncStatus(`Sync failed: ${String(err.message || err)}`);
     }
   }
 
+  function scheduleFullSyncSoon() {
+    if (!hasFirebaseConfig() || !getSyncCode()) return;
+    if (scheduledFullSyncTimer) clearTimeout(scheduledFullSyncTimer);
+    scheduledFullSyncTimer = setTimeout(() => {
+      scheduledFullSyncTimer = null;
+      void syncCloudNow(false);
+    }, 800);
+  }
+
   async function syncCloudNow(pushAfterPull) {
     if (!hasFirebaseConfig()) {
-      updateSyncStatus("Add Firebase config first, then connect sync.");
+      updateSyncStatus("Save Firebase config first, then connect sync. Push is optional.");
       return;
     }
     if (!fb.ready || !fb.firestore) {
@@ -659,27 +712,80 @@
     }
 
     try {
-      const todayKey = getTodayKey();
-      ensureDayPlan(todayKey);
-      const docRef = fb.firestore.collection("syncSpaces").doc(syncCode).collection("days").doc(todayKey);
-      const snap = await docRef.get();
-      if (snap.exists) {
-        const remote = snap.data() || {};
-        const remoteUpdated = isoToMs(remote.updatedAt);
-        const localUpdated = isoToMs(state.today[todayKey].updatedAt);
-        if (remoteUpdated > localUpdated) {
-          state.today[todayKey] = {
-            tasks: sanitizeCloudTasks(remote.tasks),
-            createdAt: remote.createdAt ? String(remote.createdAt) : null,
-            updatedAt: remote.updatedAt ? String(remote.updatedAt) : new Date().toISOString(),
-          };
-          saveState();
-          render();
-          updateSyncStatus(`Pulled latest tasks at ${new Date().toLocaleTimeString()}`);
-          if (!pushAfterPull) return;
-        }
+      if (!state.meta.deviceId) {
+        state.meta.deviceId = cryptoRandomId();
       }
-      await syncCloudStatus();
+      ensureTodoDeletedMap();
+      const daysCollection = fb.firestore.collection("syncSpaces").doc(syncCode).collection("days");
+      const remoteSnap = await daysCollection.get();
+      const remoteByKey = {};
+      remoteSnap.forEach((doc) => {
+        remoteByKey[doc.id] = sanitizeDayRecord(doc.data() || {});
+      });
+
+      const deletedMap = state.meta.todoDeletedDays || {};
+      const keys = new Set([
+        ...Object.keys(state.today || {}),
+        ...Object.keys(remoteByKey),
+        ...Object.keys(deletedMap),
+      ]);
+      const nextToday = {};
+      const remoteDeleteCandidates = new Set();
+
+      keys.forEach((key) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return;
+        const localRecord = state.today[key] ? sanitizeDayRecord(state.today[key]) : null;
+        const remoteRecord = remoteByKey[key] || null;
+        const deletedMs = isoToMs(deletedMap[key]);
+        const localMs = localRecord ? isoToMs(localRecord.updatedAt) : 0;
+        const remoteMs = remoteRecord ? isoToMs(remoteRecord.updatedAt) : 0;
+
+        if (deletedMs > 0 && deletedMs >= localMs && deletedMs >= remoteMs) {
+          if (remoteRecord) remoteDeleteCandidates.add(key);
+          return;
+        }
+
+        if (localRecord && localMs >= remoteMs) {
+          nextToday[key] = localRecord;
+          delete deletedMap[key];
+          return;
+        }
+
+        if (remoteRecord) {
+          nextToday[key] = remoteRecord;
+          delete deletedMap[key];
+        }
+      });
+
+      state.today = nextToday;
+      ensureDayPlan(getTodayKey());
+      if (!state.meta.startedOn || state.meta.startedOn > getTodayKey()) {
+        state.meta.startedOn = getTodayKey();
+      }
+      const localKeys = Object.keys(state.today).filter((key) => /^\d{4}-\d{2}-\d{2}$/.test(key));
+      for (const dayKey of localKeys) {
+        const payload = buildDayDocPayload(dayKey, state.today[dayKey]);
+        await daysCollection.doc(dayKey).set(payload, { merge: true });
+      }
+
+      for (const key of Object.keys(deletedMap)) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) continue;
+        if (!state.today[key]) remoteDeleteCandidates.add(key);
+      }
+
+      for (const dayKey of remoteDeleteCandidates) {
+        await daysCollection.doc(dayKey).delete().catch(() => {});
+      }
+
+      await pushDeviceStatus(getTodayKey());
+      saveState();
+      render();
+      updateSyncStatus(
+        `Full sync complete (${Object.keys(state.today).length} days) at ${new Date().toLocaleTimeString()}`
+      );
+      if (pushAfterPull) {
+        await syncCloudStatus(getTodayKey());
+      }
     } catch (err) {
       updateSyncStatus(`Sync failed: ${String(err.message || err)}`);
     }
@@ -783,6 +889,72 @@
     void syncCloudNow(true);
   }
 
+  function updateArchiveStatus(text) {
+    if (els.archiveClearStatusText) {
+      els.archiveClearStatusText.textContent = text;
+    }
+  }
+
+  function markDayDeletedForSync(dayKey, whenIso) {
+    ensureTodoDeletedMap();
+    state.meta.todoDeletedDays[dayKey] = whenIso || new Date().toISOString();
+  }
+
+  function downloadJsonFile(filename, payload) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  function onArchiveAndClearPastTodo() {
+    const todayKey = getTodayKey();
+    const tomorrowKey = getTomorrowKey();
+    const pastKeys = Object.keys(state.today || {})
+      .filter((key) => /^\d{4}-\d{2}-\d{2}$/.test(key))
+      .filter((key) => key < todayKey)
+      .sort();
+
+    if (!pastKeys.length) {
+      state.meta.startedOn = todayKey;
+      viewedMonth = startOfMonth(new Date());
+      saveState();
+      render();
+      updateArchiveStatus("No past Todo days to clear.");
+      return;
+    }
+
+    const archiveDays = {};
+    pastKeys.forEach((key) => {
+      archiveDays[key] = sanitizeDayRecord(state.today[key] || {});
+    });
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    downloadJsonFile(`yougrow-past-todo-archive-${stamp}.json`, {
+      exportedAt: new Date().toISOString(),
+      keptDays: [todayKey, tomorrowKey],
+      totalArchivedDays: pastKeys.length,
+      days: archiveDays,
+    });
+
+    const deletedAt = new Date().toISOString();
+    pastKeys.forEach((key) => {
+      delete state.today[key];
+      markDayDeletedForSync(key, deletedAt);
+    });
+    ensureDayPlan(todayKey);
+    state.meta.startedOn = todayKey;
+    viewedMonth = startOfMonth(new Date());
+    saveState();
+    render();
+    updateArchiveStatus(`Archived and cleared ${pastKeys.length} past Todo days.`);
+    void syncCloudNow(true);
+  }
+
   function updatePushStatus(text) {
     if (els.pushStatusText) {
       els.pushStatusText.textContent = text;
@@ -878,12 +1050,13 @@
 
     const today = getTodayKey();
     const viewingToday = selectedDayKey === today;
+    const editableDay = isEditableDayKey(selectedDayKey);
     ensureDayPlan(selectedDayKey);
     const tasks = state.today[selectedDayKey].tasks;
     const limitReached = tasks.length >= MAX_TASKS;
 
     if (els.taskForm) {
-      const hideForm = !viewingToday || limitReached;
+      const hideForm = !editableDay || limitReached;
       els.taskForm.classList.toggle("hidden", hideForm);
       if (hideForm && els.taskInput) {
         els.taskInput.value = "";
@@ -902,7 +1075,7 @@
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = task.done;
-      checkbox.disabled = !viewingToday;
+      checkbox.disabled = !editableDay;
       checkbox.setAttribute("aria-label", `Complete task ${task.title}`);
       checkbox.addEventListener("change", () => onToggleTask(task.id, selectedDayKey));
 
@@ -929,7 +1102,7 @@
       const editBtn = document.createElement("button");
       editBtn.type = "button";
       editBtn.className = "task-action";
-      editBtn.disabled = !viewingToday;
+      editBtn.disabled = !editableDay;
       editBtn.setAttribute("aria-label", `Edit task ${task.title}`);
       editBtn.innerHTML =
         "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M4 20h4l10-10-4-4L4 16v4z'></path><path d='M13 7l4 4'></path></svg>";
@@ -938,7 +1111,7 @@
       const deleteBtn = document.createElement("button");
       deleteBtn.type = "button";
       deleteBtn.className = "task-action";
-      deleteBtn.disabled = !viewingToday;
+      deleteBtn.disabled = !editableDay;
       deleteBtn.setAttribute("aria-label", `Delete task ${task.title}`);
       deleteBtn.innerHTML =
         "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M4 7h16'></path><path d='M9 7V4h6v3'></path><path d='M8 7l1 13h6l1-13'></path><path d='M10 11v6M14 11v6'></path></svg>";
@@ -952,7 +1125,7 @@
       els.taskList.appendChild(li);
     });
 
-    if (!viewingToday && els.taskForm) {
+    if (!editableDay && els.taskForm) {
       els.taskForm.classList.add("hidden");
     }
   }
@@ -2105,7 +2278,7 @@
   function renderDayStrip() {
     if (!els.dayStrip) return;
 
-    const days = getRecentDayKeys(30);
+    const days = getRecentDayKeys(DAY_STRIP_COUNT);
     if (!days.includes(selectedDayKey)) {
       selectedDayKey = getTodayKey();
     }
@@ -2130,20 +2303,26 @@
 
   function getRecentDayKeys(count) {
     const startedOn = state.meta.startedOn || getTodayKey();
-    const today = new Date();
     const keys = [];
-    for (let i = count - 1; i >= 0; i -= 1) {
+    const today = new Date();
+    const todayKey = getTodayKey();
+    const tomorrowKey = getTomorrowKey();
+    keys.push(todayKey, tomorrowKey);
+    for (let i = 1; keys.length < count; i += 1) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       const key = dateKey(d);
-      if (key >= startedOn) keys.push(key);
+      if (key < startedOn) break;
+      keys.push(key);
     }
-    return keys;
+    return Array.from(new Set(keys));
   }
 
   function formatDayPillLabel(key) {
     const d = fromDateKey(key);
-    const weekday = key === getTodayKey() ? "Today" : d.toLocaleDateString(undefined, { weekday: "short" });
+    let weekday = d.toLocaleDateString(undefined, { weekday: "short" });
+    if (key === getTodayKey()) weekday = "Today";
+    if (key === getTomorrowKey()) weekday = "Tomorrow";
     return { weekday, day: d.getDate() };
   }
 
@@ -2201,12 +2380,12 @@
 
     const startedOn = state.meta.startedOn || getTodayKey();
     if (key < startedOn) {
-      return "pre-start";
+      return "level-empty";
     }
 
     const day = state.today[key];
     if (!day || !day.tasks || day.tasks.length === 0) {
-      return "level-red";
+      return "level-empty";
     }
 
     const completed = day.tasks.filter((t) => t.done).length;
@@ -2276,6 +2455,7 @@
         daily5Game: { xp: 0, streak: 0, totalSets: 0, lastCompletedDate: "" },
         daily5UsedFacts: {},
         deviceId: "",
+        todoDeletedDays: {},
       },
     };
 
@@ -2324,6 +2504,9 @@
             ? parsed.meta.daily5UsedFacts
             : {},
           deviceId: parsed.meta?.deviceId || "",
+          todoDeletedDays: parsed.meta?.todoDeletedDays && typeof parsed.meta.todoDeletedDays === "object"
+            ? parsed.meta.todoDeletedDays
+            : {},
         },
       };
     } catch (_) {
@@ -2343,6 +2526,14 @@
 
   function getTodayKey() {
     return dateKey(new Date());
+  }
+
+  function getTomorrowKey() {
+    return dateKey(addDays(new Date(), 1));
+  }
+
+  function isEditableDayKey(dayKey) {
+    return dayKey === getTodayKey() || dayKey === getTomorrowKey();
   }
 
   function dateKey(date) {
